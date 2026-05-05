@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-int processaVideo(char* videofile);
+int processaVideo(const char* videofile);
 
 #ifdef __cplusplus
 }

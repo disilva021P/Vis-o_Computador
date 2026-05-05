@@ -11,7 +11,7 @@ extern "C" {
 }
 
 
-extern "C" int processaVideo(char* videofile) {	// V�deo
+extern "C" int processaVideo(const char* videofile) {
 	cv::VideoCapture capture;
 	struct
 	{

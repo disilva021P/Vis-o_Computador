@@ -1,3 +1,14 @@
+# Visual Studio específico
+.vs/
+x64/
+Debug/
+Release/
+*.sln.dotsettings.user
+*.user
+*.suo
+*.db
+*.opendb
+
 # Prerequisites
 *.d
 
