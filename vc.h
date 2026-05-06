@@ -71,7 +71,7 @@ int vc_rgb_to_gray(IVC* src, IVC* dst);
 
 //Aula VC-5 - Declaracão da funcao (rgb to hsv)
 int vc_rgb_to_hsv(IVC* src, IVC* dst);
-
+int vc_bgr_to_hsv(IVC* src, IVC* dst);
 //Aula VC-6 - Declaração da função (hsv_segmentation)
 int vc_hsv_segmentation(IVC* src, IVC* dst, int hmin, int hmax, int smin, int smax, int vmin, int vmax);
 

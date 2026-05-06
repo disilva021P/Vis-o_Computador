@@ -513,7 +513,89 @@ int vc_rgb_to_hsv(IVC* src, IVC* dst)
 	}
 	return 1;
 }
+int vc_bgr_to_hsv(IVC* src, IVC* dst)
+{
+	unsigned char* datasrc = (unsigned char*)src->data;
+	unsigned char* datadst = (unsigned char*)dst->data;
 
+	int width = src->width;
+	int height = src->height;
+	int channels_src = src->channels;
+	int channels_dst = dst->channels;
+
+	int bytesperline_src = width * channels_src;
+	int bytesperline_dst = width * channels_dst;
+
+	int x, y;
+	long int pos_src, pos_dst;
+
+	float rf, gf, bf;
+	float rgb_max, rgb_min;
+	float h, s, v;
+	float delta;
+
+	// Verificação de erros
+	if ((src->width <= 0) || (src->height <= 0) || (src->data == NULL)) return 0;
+	if ((src->width != dst->width) || (src->height != dst->height)) return 0;
+	if ((src->channels != 3) || (dst->channels != 3)) return 0;
+
+	for (y = 0; y < height; y++)
+	{
+		for (x = 0; x < width; x++)
+		{
+			pos_src = y * bytesperline_src + x * channels_src;
+			pos_dst = y * bytesperline_dst + x * channels_dst;
+
+			// Normalizar RGB para [0,1]
+			rf = datasrc[pos_src+2] / 255.0f;
+			gf = datasrc[pos_src + 1] / 255.0f;
+			bf = datasrc[pos_src] / 255.0f;
+
+			//Max e Min
+			rgb_max = (rf > gf ? (rf > bf ? rf : bf) : (gf > bf ? gf : bf));
+			rgb_min = (rf < gf ? (rf < bf ? rf : bf) : (gf < bf ? gf : bf));
+
+			v = rgb_max;			// Value
+			delta = rgb_max - rgb_min;
+
+			//Saturação
+			if (rgb_max == 0)
+				s = 0;
+			else
+				s = delta / v;
+
+			//Hue
+			if (delta == 0)
+			{
+				h = 0;
+			}
+			else
+			{
+				if (rgb_max == rf)
+				{
+					if (gf >= bf)
+						h = 60.0f * (gf - bf) / delta;
+					else
+						h = 360.0f + 60.0f * (gf - bf) / delta;
+				}
+				else if (rgb_max == gf)
+				{
+					h = 120.0f + 60.0f * (bf - rf) / delta;
+				}
+				else
+				{
+					h = 240.0f + 60.0f * (bf - rf) / delta;
+				}
+			}
+
+			// Escalar para 0-255
+			datadst[pos_dst] = (unsigned char)((h / 360.0f) * 255.0f);
+			datadst[pos_dst + 1] = (unsigned char)(s * 255.0f);
+			datadst[pos_dst + 2] = (unsigned char)(v * 255.0f);
+		}
+	}
+	return 1;
+}
 //Aula VC-6 hsv_segmentation
 int vc_hsv_segmentation(IVC* src, IVC* dst, int hmin_gimp, int hmax_gimp, int smin_gimp, int smax_gimp, int vmin_gimp, int vmax_gimp)
 {
