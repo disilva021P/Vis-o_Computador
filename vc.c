@@ -6,19 +6,11 @@
 //
 //             [  DUARTE DUQUE - dduque@ipca.pt  ]
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
-// Desabilita (no MSVC++) warnings de funções não seguras (fopen, sscanf, etc...)
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
 #include <malloc.h>
 #include "vc.h"
-
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//            FUNÇÕES: ALOCAR E LIBERTAR UMA IMAGEM
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
 // Alocar memoria para uma imagem
@@ -422,8 +414,9 @@ int vc_rgb_to_gray(IVC* src, IVC* dst)
 			rf = (float)datasrc[pos_src];
 			gf = (float)datasrc[pos_src + 1];
 			bf = (float)datasrc[pos_src + 2];
-
+			datadst[pos_dst] = (unsigned char)(0.299f*rf + 0.587f*gf + 0.114f*bf);
 		}
+		
 	}
 
 	return 1;
@@ -1266,6 +1259,7 @@ int vc_binary_blob_info(IVC* src, OVC* blobs, int nblobs)
 		sumy = 0;
 
 		blobs[i].area = 0;
+		blobs[i].perimeter = 0;
 
 		for (y = 1; y < height - 1; y++)
 		{
