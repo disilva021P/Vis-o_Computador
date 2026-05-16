@@ -165,13 +165,12 @@ static const char* calcCategoria(int area, int perimetro, float pct_defeito,
     float circ = (4.0f * (float)M_PI * (float)area)
                / ((float)perimetro * (float)perimetro);
 
-    if (circ < 0.50f) return "Fora";
+    if (circ < 0.53f) return "Fora";
 
     int pontos = 0;
 
     // Defeito de forma — circularidade
     if      (circ >= 0.90f) pontos += 0;
-    
     else if (circ >= 0.80f) pontos += 1;
     else                    pontos += 2;
 
@@ -333,7 +332,6 @@ static bool processaBlob(cv::Mat& frame, const OVC& blob, int nframe,
             break;
         }
     }
-
     float       pct_defeito = 0.0f;
     const char* cat         = "?";
     if (!jaContado) {
@@ -614,11 +612,10 @@ extern "C" int processaVideo(const char* videofile)
 
         // 2) Segmentação: isolar píxeis com cor laranja
         //    H: 5-35 graus, S: 40-100 %, V: 30-100 % (escala GIMP)
-        vc_hsv_segmentation(imageHSV, imageMask, 5, 35, 40, 100, 30, 100);
-
+        vc_hsv_segmentation(imageHSV, imageMask, 15, 35, 40, 100, 35, 100);
         // 3) Morfologia: fechar buracos (dilatação) e remover ruído (erosão)
         vc_binary_dilate(imageMask,    imageDilated, 7);
-        vc_binary_erode (imageDilated, imageEroded,  7);
+        vc_binary_erode (imageDilated, imageEroded,  3);
 
         // 4) Labeling: identificar e separar blobs
         int  nlabels = 0;
@@ -646,7 +643,7 @@ extern "C" int processaVideo(const char* videofile)
                 if (blobs[i].area < AREA_MIN) continue;
                 float d = calcDiametroMM(blobs[i].width, blobs[i].height);
                 if (d >= DIAM_MIN_MM) {
-                    if (processaBlob(frame, blobs[i], nframe, imageDilated, imageMask,
+                    if (processaBlob(frame, blobs[i], nframe, imageEroded, imageMask,
                                      rastreio, laranjas, proximoId,
                                      diamMinFrame, diamMaxFrame))
                         nLaranjaFrame++;
