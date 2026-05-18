@@ -147,40 +147,67 @@ static int calcCalibre(float diametro_mm)
 static const char* calcCategoria(int area, int perimetro, float pct_defeito,
     float diamMin, float diamMax)
 {
-    if (perimetro == 0) return "?";
+    printf("\n=== calcCategoria DEBUG ===\n");
+    printf("  area=%d  perimetro=%d  pct_defeito=%.4f  diamMin=%.2f  diamMax=%.2f\n",
+           area, perimetro, pct_defeito, diamMin, diamMax);
+
+    if (perimetro == 0) {
+        printf("  => perimetro==0, retorna '?'\n");
+        return "?";
+    }
 
     float circ = (4.0f * (float)M_PI * (float)area)
-        / ((float)perimetro * (float)perimetro);
+               / ((float)perimetro * (float)perimetro);
+    printf("  circ=%.4f\n", circ);
 
-    if (circ < 0.53f) return "Fora";
+    if (circ < 0.53f) {
+        printf("  => circ < 0.53, retorna 'Fora'\n");
+        return "Fora";
+    }
 
     int pontos = 0;
 
-    
-    if (circ >= 0.90f) pontos += 0;
-    else if (circ >= 0.80f) pontos += 1;
-    else                    pontos += 2;
+    // --- circularidade ---
+    if      (circ >= 0.90f) { printf("  circ>=0.90 => +0 pontos\n"); pontos += 0; }
+    else if (circ >= 0.80f) { printf("  circ>=0.80 => +1 ponto\n");  pontos += 1; }
+    else                    { printf("  circ<0.80  => +2 pontos\n"); pontos += 2; }
 
-    
-    if (pct_defeito < 0.05f) pontos += 0;
-    else if (pct_defeito < 0.15f) pontos += 1;
-    else if (pct_defeito < 0.30f) pontos += 2;
-    else                          pontos += 3;
+    // --- defeito ---
+    if      (pct_defeito < 0.05f) { printf("  defeito<3%%  => +0 pontos\n"); pontos += 1; }
+    else if (pct_defeito < 0.15f) { printf("  defeito<15%% => +1 ponto\n");  pontos += 2; }
+    else if (pct_defeito < 0.30f) { printf("  defeito<30%% => +2 pontos\n"); pontos += 3; }
+    else                          { printf("  defeito>=30%% => +3 pontos\n"); pontos += 4; }
 
-    
-    
+    // --- calibre / diâmetro ---
     if (diamMin <= diamMax && diamMax > 0.0f) {
         int cal = calcCalibre(diamMax);
+        printf("  calibre=%d\n", cal);
         if (cal >= 0) {
             float lim = (cal <= 2) ? 11.0f : (cal <= 6) ? 9.0f : 7.0f;
-            if (diamMax - diamMin > lim) pontos += 2;
+            float diff = diamMax - diamMin;
+            printf("  lim=%.1f  diff(diamMax-diamMin)=%.2f\n", lim, diff);
+            if (diff > lim) {
+                printf("  diff>lim => +2 pontos\n");
+                pontos += 2;
+            } else {
+                printf("  diff<=lim => +0 pontos\n");
+            }
         }
+    } else {
+        printf("  diametros invalidos, skip calibre\n");
     }
 
-    if (pontos <= 1) return "Extra";
-    else if (pontos <= 3) return "I";
-    else if (pontos <= 5) return "II/III";
-    else                  return "Fora";
+    printf("  pontos totais=%d\n", pontos);
+
+    const char* cat;
+    if      (pontos <= 1) cat = "Extra";
+    else if (pontos <= 3) cat = "I";
+    else if (pontos <= 5) cat = "II/III";
+    else                  cat = "Fora";
+
+    printf("  => categoria='%s'\n", cat);
+    printf("===========================\n\n");
+    return cat;
 }
 
 
@@ -427,7 +454,6 @@ static bool processaBlob(cv::Mat& frame, const OVC& blob, int nframe,
         nova.aprovada = aprovada;
         nova.pct_defeito = pct_defeito;
         rastreio.push_back(nova);
-
         if (nova.contado) {
             LaranjaInfo info = criarInfo(proximoId++, diam_mm, calibre,
                 cat, blob, cx, cy, aprovada, pct_defeito);
@@ -437,8 +463,6 @@ static bool processaBlob(cv::Mat& frame, const OVC& blob, int nframe,
         }
     }
 
-    
-    
 
     float       draw_diam = infoCongelado ? infoCongelado->diametro_mm : diam_mm;
     int         draw_calibre = infoCongelado ? infoCongelado->calibre : calibre;
@@ -627,10 +651,10 @@ extern "C" int processaVideo(const char* videofile)
 
         
         
-        vc_hsv_segmentation(imageHSV, imageMask, 15, 35, 40, 100, 35, 100);
+        vc_hsv_segmentation(imageHSV, imageMask, 5, 35, 40, 100, 25, 100);
         
-        vc_binary_dilate(imageMask, imageDilated, 7);
-        vc_binary_erode(imageDilated, imageEroded, 3);
+        vc_binary_dilate(imageMask, imageDilated, 9);
+        vc_binary_erode(imageDilated, imageEroded, 5);
 
         
         int  nlabels = 0;
@@ -677,8 +701,7 @@ extern "C" int processaVideo(const char* videofile)
             if (nframe - rastreio[j].frameVista > FRAMES_AUSENTE)
                 rastreio.erase(rastreio.begin() + j);
         }
-
-        cv::imshow("VC - VIDEO", frame);
+        cv::imshow("VC - Eroded", frame);   
         key = cv::waitKey(1);
     }
 
